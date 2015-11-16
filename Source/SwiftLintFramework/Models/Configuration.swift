@@ -128,6 +128,7 @@ public struct Configuration {
             ForceCastRule(),
             ForceTryRule(),
             LeadingWhitespaceRule(),
+            MissingDocsRule(),
             NestingRule(),
             OpeningBraceRule(),
             OperatorFunctionWhitespaceRule(),

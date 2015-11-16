@@ -93,6 +93,10 @@ class StringRuleTests: XCTestCase {
         verifyRule(TrailingNewlineRule.description, commentDoesntViolate: false)
     }
 
+    func testMissingDocs() {
+        verifyRule(MissingDocsRule.description, commentDoesntViolate: false)
+    }
+
     func testTrailingSemicolon() {
         verifyRule(TrailingSemicolonRule.description)
     }

@@ -125,6 +125,7 @@ public struct Configuration {
             ColonRule(),
             CommaRule(),
             ControlStatementRule(),
+            EmptyCountRule(),
             ForceCastRule(),
             ForceTryRule(),
             LeadingWhitespaceRule(),

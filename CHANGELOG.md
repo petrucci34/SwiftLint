@@ -6,7 +6,8 @@
 
 ##### Enhancements
 
-* None.
+* Add rule to encourage checking `isEmpty` over comparing `count` to zero.  
+  [JP Simard](https://github.com/jpsim)
 
 ##### Bug Fixes
 

@@ -24,7 +24,13 @@ class IntegrationTests: XCTestCase {
             let allFiles = try fileManager.allFilesRecursively(directory: directory)
             let swiftFiles = allFiles.filter { $0.isSwiftFile() }
             XCTAssert(swiftFiles.contains(__FILE__), "current file should be included")
-            XCTAssertEqual(swiftFiles.flatMap({Linter(file: File(path: $0)!).styleViolations}), [])
+            let configPath = ((directory as NSString)
+                .stringByDeletingLastPathComponent as NSString)
+                .stringByAppendingPathComponent(".swiftlint.yml")
+            let config = Configuration(path: configPath)
+            XCTAssertEqual(swiftFiles.flatMap({
+                Linter(file: File(path: $0)!, configuration: config).styleViolations
+            }), [])
         } catch {
             fatalError("Couldn't find files in \(directory): \(error)")
         }

@@ -128,7 +128,6 @@ public struct Configuration {
             ForceCastRule(),
             ForceTryRule(),
             LeadingWhitespaceRule(),
-            MissingDocsRule(),
             NestingRule(),
             OpeningBraceRule(),
             OperatorFunctionWhitespaceRule(),
@@ -147,11 +146,17 @@ public struct Configuration {
         let intParams: (Rule.Type) -> [RuleParameter<Int>]? = {
             (yaml?[.String($0.description.identifier)].arrayOfInts).map(ruleParametersFromArray)
         }
+        let aclParams = { (ruleType: Rule.Type) -> [RuleParameter<AccessControlLevel>]? in
+            let acl = (yaml?[.String(ruleType.description.identifier)].arrayOfStrings)?
+                .flatMap({ AccessControlLevel(rawValue: $0) })
+            return acl.map(ruleParametersFromArray)
+        }
         // swiftlint:disable line_length
         return [
             intParams(FileLengthRule).map(FileLengthRule.init) ?? FileLengthRule(),
             intParams(FunctionBodyLengthRule).map(FunctionBodyLengthRule.init) ?? FunctionBodyLengthRule(),
             intParams(LineLengthRule).map(LineLengthRule.init) ?? LineLengthRule(),
+            aclParams(MissingDocsRule).map(MissingDocsRule.init) ?? MissingDocsRule(),
             intParams(TypeBodyLengthRule).map(TypeBodyLengthRule.init) ?? TypeBodyLengthRule(),
             intParams(VariableNameMaxLengthRule).map(VariableNameMaxLengthRule.init) ?? VariableNameMaxLengthRule(),
             intParams(VariableNameMinLengthRule).map(VariableNameMinLengthRule.init) ?? VariableNameMinLengthRule(),

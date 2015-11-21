@@ -138,6 +138,7 @@ public struct Configuration {
             TrailingSemicolonRule(),
             TrailingWhitespaceRule(),
             TypeNameRule(),
+            ValidDocsRule(),
             VariableNameRule(),
         ] + parameterRulesFromYAML(yaml)
     }

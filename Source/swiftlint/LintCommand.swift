@@ -84,7 +84,11 @@ struct LintCommand: CommandType {
             }
             let linter = Linter(file: file, configuration: configuration)
             if autocorrect {
-                linter.correct()
+                let corrections = linter.correct()
+                if !corrections.isEmpty {
+                    let correctionLogs = corrections.map({ $0.consoleDescription })
+                    print(correctionLogs.joinWithSeparator("\n"))
+                }
                 continue
             }
             let currentViolations = linter.styleViolations

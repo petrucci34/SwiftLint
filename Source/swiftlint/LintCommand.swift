@@ -24,29 +24,35 @@ struct LintCommand: CommandType {
             let configuration = Configuration(path: options.configurationFile,
                 optional: !Process.arguments.contains("--config"))
             if options.useSTDIN {
+                if options.autocorrect {
+                    let message = "Cannot use --autocorrect with --use-stdin"
+                    return .Failure(CommandantError<()>.UsageError(description: message))
+                }
                 let standardInput = NSFileHandle.fileHandleWithStandardInput()
                 let stdinData = standardInput.readDataToEndOfFile()
                 let stdinNSString = NSString(data: stdinData, encoding: NSUTF8StringEncoding)
                 if let stdinString = stdinNSString as? String {
                     return lint([File(contents: stdinString)],
                         configuration: configuration,
-                        strict: options.strict)
+                        strict: options.strict, autocorrect: false)
                 }
                 return .Failure(CommandantError<()>.CommandError())
             } else if options.useScriptInputFiles {
                 return scriptInputFiles().flatMap { paths in
                     let files = paths.filter { $0.isSwiftFile() }.flatMap(File.init)
-                    return lint(files, configuration: configuration, strict: options.strict)
+                    return lint(files, configuration: configuration, strict: options.strict,
+                                autocorrect: options.autocorrect)
                 }
             }
 
             // Otherwise parse path.
-            return lint(options.path, configuration: configuration, strict: options.strict)
+            return lint(options.path, configuration: configuration, strict: options.strict,
+                        autocorrect: options.autocorrect)
         }
     }
 
-    private func lint(path: String, configuration: Configuration, strict: Bool) ->
-        Result<(), CommandantError<()>> {
+    private func lint(path: String, configuration: Configuration, strict: Bool,
+                      autocorrect: Bool) -> Result<(), CommandantError<()>> {
         let filesToLint = (configuration.included.isEmpty ? filesToLintAtPath(path) : [])
             .filter({ !configuration.excluded.flatMap(filesToLintAtPath).contains($0) }) +
             configuration.included.flatMap(filesToLintAtPath)
@@ -57,22 +63,30 @@ struct LintCommand: CommandType {
         }
         let files = filesToLint.flatMap(File.init)
         if !files.isEmpty {
-            return lint(files, configuration: configuration, strict: strict)
+            return lint(files, configuration: configuration, strict: strict,
+                        autocorrect: autocorrect)
         }
         return .Failure(CommandantError<()>.UsageError(description: "No lintable files found at" +
             " path \(path)"))
     }
 
-    private func lint(files: [File], configuration: Configuration, strict: Bool) ->
-        Result<(), CommandantError<()>> {
+    // swiftlint:disable function_body_length
+    private func lint(files: [File], configuration: Configuration, strict: Bool,
+                      autocorrect: Bool) -> Result<(), CommandantError<()>> {
         var violations = [StyleViolation]()
         var reporter: Reporter.Type = XcodeReporter.self
+        let fileCount = files.count
         for (index, file) in files.enumerate() {
             if let path = file.path {
                 let filename = (path as NSString).lastPathComponent
-                queuedPrintError("Linting '\(filename)' (\(index + 1)/\(files.count))")
+                let action = autocorrect ? "Correcting" : "Linting"
+                queuedPrintError("\(action) '\(filename)' (\(index + 1)/\(fileCount))")
             }
             let linter = Linter(file: file, configuration: configuration)
+            if autocorrect {
+                linter.correct()
+                continue
+            }
             let currentViolations = linter.styleViolations
             violations += currentViolations
             reporter = linter.reporter
@@ -82,6 +96,10 @@ struct LintCommand: CommandType {
                     queuedPrint(report)
                 }
             }
+        }
+        if autocorrect {
+            queuedPrintError("Done autocorrecting!")
+            return .Success()
         }
         if !reporter.isRealtime {
             queuedPrint(reporter.generateReport(violations))
@@ -93,7 +111,7 @@ struct LintCommand: CommandType {
             "Done linting!" +
             " Found \(violations.count) violation\(violationSuffix)," +
             " \(numberOfSeriousViolations) serious" +
-            " in \(files.count) file\(filesSuffix)"
+            " in \(fileCount) file\(filesSuffix)"
         )
         if strict && !violations.isEmpty {
             return .Failure(CommandantError<()>.CommandError())
@@ -102,6 +120,7 @@ struct LintCommand: CommandType {
         }
         return .Failure(CommandantError<()>.CommandError())
     }
+    // swiftlint:enable function_body_length
 
     private func filesToLintAtPath(path: String) -> [String] {
         let absolutePath = (path.absolutePathRepresentation() as NSString).stringByStandardizingPath
@@ -145,7 +164,7 @@ struct LintCommand: CommandType {
 
         return count.flatMap { count in
             let variables = (0..<count)
-                .map { return getEnvironmentVariable("SCRIPT_INPUT_FILE_\($0)") }
+                .map { getEnvironmentVariable("SCRIPT_INPUT_FILE_\($0)") }
                 .flatMap { path -> String? in
                     switch path {
                     case let .Success(path):
@@ -166,11 +185,12 @@ struct LintOptions: OptionsType {
     let configurationFile: String
     let strict: Bool
     let useScriptInputFiles: Bool
+    let autocorrect: Bool
 
     static func create(path: String)(useSTDIN: Bool)(configurationFile: String)(strict: Bool)
-        (useScriptInputFiles: Bool) -> LintOptions {
+        (useScriptInputFiles: Bool)(autocorrect: Bool) -> LintOptions {
         return LintOptions(path: path, useSTDIN: useSTDIN, configurationFile: configurationFile,
-            strict: strict, useScriptInputFiles: useScriptInputFiles)
+            strict: strict, useScriptInputFiles: useScriptInputFiles, autocorrect: autocorrect)
     }
 
     static func evaluate(mode: CommandMode) -> Result<LintOptions, CommandantError<()>> {
@@ -190,5 +210,8 @@ struct LintOptions: OptionsType {
             <*> mode <| Option(key: "use-script-input-files",
                 defaultValue: false,
                 usage: "read SCRIPT_INPUT_FILE* environment variables as files")
+            <*> mode <| Option(key: "autocorrect",
+                defaultValue: false,
+                usage: "automatically overwrite files to lint, correcting violations when possible")
     }
 }

@@ -12,8 +12,7 @@ import SwiftXPC
 public struct VariableNameMinLengthRule: ASTRule, ParameterizedRule {
     public init() {
         self.init(parameters: [
-            RuleParameter(severity: .Warning, value: 3),
-            RuleParameter(severity: .Error, value: 2)
+            RuleParameter(severity: .Warning, value: 3)
         ])
     }
 

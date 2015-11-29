@@ -11,8 +11,7 @@ import SourceKittenFramework
 public struct FileLengthRule: ParameterizedRule {
     public init() {
         self.init(parameters: [
-            RuleParameter(severity: .Warning, value: 400),
-            RuleParameter(severity: .Error, value: 1000)
+            RuleParameter(severity: .Warning, value: 400)
         ])
     }
 

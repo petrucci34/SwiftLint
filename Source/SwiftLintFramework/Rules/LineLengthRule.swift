@@ -11,8 +11,7 @@ import SourceKittenFramework
 public struct LineLengthRule: ParameterizedRule {
     public init() {
         self.init(parameters: [
-            RuleParameter(severity: .Warning, value: 100),
-            RuleParameter(severity: .Error, value: 200)
+            RuleParameter(severity: .Warning, value: 100)
         ])
     }
 

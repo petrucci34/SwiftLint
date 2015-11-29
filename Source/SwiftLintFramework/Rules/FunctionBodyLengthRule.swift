@@ -12,8 +12,7 @@ import SwiftXPC
 public struct FunctionBodyLengthRule: ASTRule, ParameterizedRule {
     public init() {
         self.init(parameters: [
-            RuleParameter(severity: .Warning, value: 40),
-            RuleParameter(severity: .Error, value: 100)
+            RuleParameter(severity: .Warning, value: 40)
         ])
     }
 

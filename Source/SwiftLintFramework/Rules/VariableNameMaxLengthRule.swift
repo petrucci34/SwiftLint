@@ -12,8 +12,7 @@ import SwiftXPC
 public struct VariableNameMaxLengthRule: ASTRule, ParameterizedRule {
     public init() {
         self.init(parameters: [
-            RuleParameter(severity: .Warning, value: 40),
-            RuleParameter(severity: .Error, value: 60)
+            RuleParameter(severity: .Warning, value: 40)
         ])
     }
 
